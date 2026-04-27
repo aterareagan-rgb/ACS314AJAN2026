@@ -178,6 +178,7 @@ class _DashboardState extends State<Dashboard>
         children: [
           CircleAvatar(
             radius: 30,
+            // ignore: deprecated_member_use
             backgroundColor: const Color.fromARGB(255, 63, 3, 3).withOpacity(0.1),
             child: Icon(icon, color: const Color.fromARGB(255, 63, 3, 3)),
           ),
@@ -196,6 +197,8 @@ class _DashboardState extends State<Dashboard>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
+
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),

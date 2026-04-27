@@ -136,6 +136,7 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -183,6 +184,7 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),

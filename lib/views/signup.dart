@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -92,7 +93,9 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     // Logic for successful signup
-    print("Signup - Name: $fullName, Email: $email, Phone: $phone, Password: $password");
+    if (kDebugMode) {
+      print("Signup - Name: $fullName, Email: $email, Phone: $phone, Password: $password");
+    }
     
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -210,6 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: Colors.orange.withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
