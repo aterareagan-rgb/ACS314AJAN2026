@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/storage_service.dart';
 
 class Orders extends StatefulWidget {
   const Orders({super.key});
@@ -9,38 +10,28 @@ class Orders extends StatefulWidget {
 
 class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
-  final List<Map<String, dynamic>> activeOrders = [
-    {
-      "car": "Mercedes-Benz S-Class",
-      "date": "2024-03-15",
-      "status": "Processing",
-      "price": "KSh 4,500,000",
-      "image": Icons.directions_car,
-    },
-    {
-      "car": "BMW M5",
-      "date": "2024-03-20",
-      "status": "Confirmed",
-      "price": "KSh 6,000,000",
-      "image": Icons.local_shipping,
-    },
-  ];
-
-  final List<Map<String, dynamic>> completedOrders = [
-    {
-      "car": "Toyota Land Cruiser",
-      "date": "2024-02-10",
-      "status": "Delivered",
-      "price": "KSh 8,500,000",
-      "image": Icons.check_circle,
-    },
-  ];
+  List<Map<String, dynamic>> orders = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
+    final savedOrders = await StorageService.loadOrders();
+    setState(() {
+      orders = savedOrders;
+    });
+  }
+
+  Future<void> _updateOrderStatus(Map<String, dynamic> order, String status) async {
+    final index = orders.indexWhere((item) => item['id'] == order['id']);
+    if (index == -1) return;
+    orders[index] = {...orders[index], 'status': status};
+    await StorageService.saveOrders(orders);
+    setState(() {});
   }
 
   @override
@@ -51,13 +42,16 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final activeOrders = orders.where((order) => order['status'] != 'Delivered').toList();
+    final completedOrders = orders.where((order) => order['status'] == 'Delivered').toList();
+
     return SafeArea(
       child: Column(
         children: [
           const Padding(
             padding: EdgeInsets.all(16),
             child: Text(
-              "My Orders",
+              'My Orders',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -71,8 +65,8 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
             unselectedLabelColor: Colors.grey,
             indicatorColor: const Color.fromARGB(255, 63, 3, 3),
             tabs: const [
-              Tab(text: "Active"),
-              Tab(text: "Completed"),
+              Tab(text: 'Active'),
+              Tab(text: 'Completed'),
             ],
           ),
           Expanded(
@@ -97,31 +91,34 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
           children: [
             Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text("No orders yet", style: TextStyle(color: Colors.grey)),
+            Text('No orders yet', style: TextStyle(color: Colors.grey)),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        return _buildOrderCard(orders[index], isActive);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadOrders,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          return _buildOrderCard(orders[index], isActive);
+        },
+      ),
     );
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order, bool isActive) {
     Color statusColor;
-    switch (order["status"]) {
-      case "Processing":
+    switch (order['status']) {
+      case 'Processing':
         statusColor = Colors.orange;
         break;
-      case "Confirmed":
+      case 'Confirmed':
         statusColor = Colors.blue;
         break;
-      case "Delivered":
+      case 'Delivered':
         statusColor = Colors.green;
         break;
       default:
@@ -136,81 +133,125 @@ class _OrdersState extends State<Orders> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withAlpha(51),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              order["image"],
-              size: 40,
-              color: const Color.fromARGB(255, 63, 3, 3),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order["car"],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  order["date"],
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: order['imageAsset'] != null
+                      ? Image.asset(
+                          order['imageAsset'],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        )
+                      : order['imageUrl'] != null
+                          ? Image.network(
+                              order['imageUrl'],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  order['image'],
+                                  size: 40,
+                                  color: const Color.fromARGB(255, 63, 3, 3),
+                                );
+                              },
+                            )
+                          : Icon(
+                              order['image'],
+                              size: 40,
+                              color: const Color.fromARGB(255, 63, 3, 3),
+                            ),
                 ),
-                const SizedBox(height: 8),
-                Row(
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        // ignore: deprecated_member_use
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        order["status"],
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
                     Text(
-                      order["price"],
+                      order['car'],
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 63, 3, 3),
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      order['date'],
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withAlpha(26),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            order['status'],
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          order['price'],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 63, 3, 3),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+          if (isActive) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await _updateOrderStatus(order, 'Delivered');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 63, 3, 3),
+                    ),
+                    child: const Text('Mark Delivered'),
+                  ),
+                ),
               ],
             ),
-          ),
+          ],
         ],
       ),
     );

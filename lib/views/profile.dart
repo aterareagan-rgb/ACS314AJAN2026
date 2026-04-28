@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:flutter_application_1/services/storage_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,8 +10,32 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? currentUser;
+  int ordersCount = 0;
+  int completedCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = await StorageService.loadCurrentUser();
+    final orders = await StorageService.loadOrders();
+    setState(() {
+      currentUser = user;
+      ordersCount = orders.length;
+      completedCount = orders.where((order) => order['status'] == 'Delivered').length;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final fullName = currentUser != null ? '${currentUser!['firstname']} ${currentUser!['lastname']}' : 'Guest User';
+    final email = currentUser != null ? currentUser!['email'] : 'guest@example.com';
+    final phone = currentUser != null ? currentUser!['phone'] : '+254 700 000 000';
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -40,27 +64,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Casey Atera",
-                          style: TextStyle(
+                          fullName,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "Casey Atera@gmail.com",
-                          style: TextStyle(color: Colors.white70),
+                          email,
+                          style: const TextStyle(color: Colors.white70),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "+254 715278235",
-                          style: TextStyle(color: Colors.white70),
+                          phone,
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
@@ -77,11 +101,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Stats Row
             Row(
               children: [
-                _buildStatCard("3", "Cars Bought"),
+                _buildStatCard(ordersCount.toString(), 'Cars Bought'),
                 const SizedBox(width: 12),
-                _buildStatCard("1", "Cars Sold"),
+                _buildStatCard(completedCount.toString(), 'Delivered'),
                 const SizedBox(width: 12),
-                _buildStatCard("5", "Favorites"),
+                _buildStatCard('5', 'Favorites'),
               ],
             ),
             const SizedBox(height: 24),
@@ -89,20 +113,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Menu Items
             _buildMenuItem(
               icon: Icons.favorite,
-              title: "My Favorites",
-              subtitle: "View your saved cars",
+              title: 'My Favorites',
+              subtitle: 'View your saved cars',
               onTap: () {},
             ),
             _buildMenuItem(
               icon: Icons.history,
-              title: "Transaction History",
-              subtitle: "View past transactions",
+              title: 'Transaction History',
+              subtitle: 'View past transactions',
               onTap: () {},
             ),
             _buildMenuItem(
               icon: Icons.notifications,
-              title: "Notifications",
-              subtitle: "Manage your alerts",
+              title: 'Notifications',
+              subtitle: 'Manage your alerts',
               trailing: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
@@ -110,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: const Text(
-                  "3",
+                  '3',
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
@@ -118,20 +142,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             _buildMenuItem(
               icon: Icons.location_on,
-              title: "Saved Addresses",
-              subtitle: "Manage delivery locations",
+              title: 'Saved Addresses',
+              subtitle: 'Manage delivery locations',
               onTap: () {},
             ),
             _buildMenuItem(
               icon: Icons.help,
-              title: "Help & Support",
-              subtitle: "Get assistance",
+              title: 'Help & Support',
+              subtitle: 'Get assistance',
               onTap: () {},
             ),
             _buildMenuItem(
               icon: Icons.settings,
-              title: "Settings",
-              subtitle: "App preferences",
+              title: 'Settings',
+              subtitle: 'App preferences',
               onTap: () {},
             ),
             const SizedBox(height: 24),
@@ -140,11 +164,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Get.offAllNamed("/login");
+                onPressed: () async {
+                  await StorageService.clearCurrentUser();
+                  Get.offAllNamed('/login');
                 },
                 icon: const Icon(Icons.logout),
-                label: const Text("Logout"),
+                label: const Text('Logout'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 63, 3, 3),
                   foregroundColor: Colors.white,
@@ -170,8 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              // ignore: deprecated_member_use
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withAlpha(51),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -212,8 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha(26),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -223,8 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
-            color: const Color.fromARGB(255, 63, 3, 3).withOpacity(0.1),
+            color: const Color.fromARGB(255, 63, 3, 3).withAlpha(26),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: const Color.fromARGB(255, 63, 3, 3)),

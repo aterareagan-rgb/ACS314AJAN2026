@@ -1,0 +1,20 @@
+[
+  {
+    "id": "test_user_1",
+    "firstname": "John",
+    "lastname": "Doe",
+    "email": "john@example.com",
+    "phone": "1234567890",
+    "password": "$2y$10$9IQmtvVklN3Z7Mz7Qz8Ge.Z1c.rFLfLLmvK9P7Z8X.Z1c.rFLfLLm",
+    "created_at": "2026-01-01 10:00:00"
+  },
+  {
+    "id": "test_user_2",
+    "firstname": "Jane",
+    "lastname": "Smith",
+    "email": "jane@example.com",
+    "phone": "9876543210",
+    "password": "$2y$10$9IQmtvVklN3Z7Mz7Qz8Ge.Z1c.rFLfLLmvK9P7Z8X.Z1c.rFLfLLm",
+    "created_at": "2026-01-02 11:00:00"
+  }
+]

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/storage_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -7,20 +8,28 @@ class Dashboard extends StatefulWidget {
   State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<Dashboard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _DashboardState extends State<Dashboard> {
+  String userName = 'Guest';
+  int ordersCount = 0;
+  int completedOrders = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this);
+    _loadProfileData();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Future<void> _loadProfileData() async {
+    final currentUser = await StorageService.loadCurrentUser();
+    final orders = await StorageService.loadOrders();
+
+    setState(() {
+      userName = currentUser != null
+          ? '${currentUser['firstname']} ${currentUser['lastname']}'
+          : 'Guest';
+      ordersCount = orders.length;
+      completedOrders = orders.where((order) => order['status'] == 'Delivered').length;
+    });
   }
 
   @override
@@ -42,9 +51,9 @@ class _DashboardState extends State<Dashboard>
                       "Welcome back,",
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
-                    const Text(
-                      "Mandem de' Aterah,",
-                      style: TextStyle(
+                    Text(
+                      userName,
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 63, 3, 3),
@@ -57,6 +66,15 @@ class _DashboardState extends State<Dashboard>
                   backgroundColor: const Color.fromARGB(255, 63, 3, 3),
                   child: const Icon(Icons.person, color: Colors.white),
                 ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                _buildStatTile('Orders', ordersCount.toString()),
+                const SizedBox(width: 12),
+                _buildStatTile('Delivered', completedOrders.toString()),
               ],
             ),
             const SizedBox(height: 24),
@@ -178,13 +196,49 @@ class _DashboardState extends State<Dashboard>
         children: [
           CircleAvatar(
             radius: 30,
-            // ignore: deprecated_member_use
-            backgroundColor: const Color.fromARGB(255, 63, 3, 3).withOpacity(0.1),
+            backgroundColor: const Color.fromARGB(255, 63, 3, 3).withAlpha(26),
             child: Icon(icon, color: const Color.fromARGB(255, 63, 3, 3)),
           ),
           const SizedBox(height: 8),
           Text(name, style: const TextStyle(fontSize: 12)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatTile(String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withAlpha(26),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 63, 3, 3),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -197,9 +251,7 @@ class _DashboardState extends State<Dashboard>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-
-            // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withAlpha(51),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

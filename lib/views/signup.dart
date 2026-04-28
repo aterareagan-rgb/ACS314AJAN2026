@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/services/storage_service.dart';
 import 'package:get/get.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void handleSignup() {
+  Future<void> handleSignup() async {
     final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
@@ -38,74 +38,63 @@ class _SignupScreenState extends State<SignupScreen> {
 
     // Validation
     if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill in all fields"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      Get.snackbar("Error", "Please fill in all fields");
       return;
     }
 
     // Email validation
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid email address"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      Get.snackbar("Error", "Please enter a valid email address");
       return;
     }
 
     // Phone validation (basic)
     if (phone.length < 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter a valid phone number"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      Get.snackbar("Error", "Please enter a valid phone number");
       return;
     }
 
     // Password match validation
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Passwords do not match"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      Get.snackbar("Error", "Passwords do not match");
       return;
     }
 
     // Password strength validation
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Password must be at least 6 characters"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      Get.snackbar("Error", "Password must be at least 6 characters");
       return;
     }
 
-    // Logic for successful signup
-    if (kDebugMode) {
-      print("Signup - Name: $fullName, Email: $email, Phone: $phone, Password: $password");
+    final users = await StorageService.loadUsers();
+    if (users.any((user) => user['email'] == email)) {
+      Get.snackbar("Error", "Email is already registered");
+      return;
     }
-    
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Account created successfully!"),
-        backgroundColor: Colors.green,
-      ),
-    );
 
-    // Navigate to login screen
+    final nameParts = fullName.split(' ');
+    final firstName = nameParts[0];
+    final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : 'User';
+
+    final newUser = {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'firstname': firstName,
+      'lastname': lastName,
+      'email': email,
+      'phone': phone,
+      'password': password,
+    };
+
+    users.add(newUser);
+    await StorageService.saveUsers(users);
+
+    Get.snackbar("Success", "Account created successfully!");
+    fullNameController.clear();
+    emailController.clear();
+    phoneController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
     Get.offNamed("/login");
   }
 
